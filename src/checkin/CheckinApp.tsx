@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -8,8 +8,28 @@ import { makeCheckinSchema, STEP_FIELDS, type CheckinForm } from './schema';
 import Progress from './Progress';
 import { Step1, Step2, Step3, Step4 } from './steps';
 import Review from './Review';
+import Splash from '../intro/Splash';
+import IntroTimeline from '../intro/IntroTimeline';
+import MuteButton from '../intro/MuteButton';
+import { introAudio } from '../lib/audio';
 
 const DEPARTURE_FALLBACK = '2027-03-31'; // peor caso (§16.6); normalmente llega del trip.
+const INTRO_SEEN_KEY = 'tc_intro_seen';
+
+function readIntroSeen(): boolean {
+  try {
+    return localStorage.getItem(INTRO_SEEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function writeIntroSeen(): void {
+  try {
+    localStorage.setItem(INTRO_SEEN_KEY, '1');
+  } catch {
+    /* modo privado: se mostrará la intro completa de nuevo, no pasa nada */
+  }
+}
 
 function toDefaults(c: Checkin | null): CheckinForm {
   return {
@@ -29,7 +49,7 @@ function toDefaults(c: Checkin | null): CheckinForm {
   };
 }
 
-type Phase = 'welcome' | 'form' | 'review';
+type Phase = 'splash' | 'intro' | 'welcome' | 'form' | 'review';
 const LAST_STEP = 4;
 
 export default function CheckinApp({ token }: { token: string }) {
@@ -79,11 +99,19 @@ function CheckinFlow({ token, data }: { token: string; data: GetCheckinResult })
     mode: 'onTouched',
   });
 
-  const [phase, setPhase] = useState<Phase>('welcome');
+  // Visitas siguientes: intro corta (§3). Se decide al montar.
+  const wasSeen = useRef(readIntroSeen());
+  const [phase, setPhase] = useState<Phase>(wasSeen.current ? 'intro' : 'splash');
   const [step, setStep] = useState(1);
   const [status, setStatus] = useState<CheckinStatus>(data.checkin?.status ?? 'faltan_datos');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  function handleIntroDone() {
+    writeIntroSeen();
+    introAudio.enterFormMode(); // música al 30 % en loop durante el formulario (§5)
+    setPhase('welcome');
+  }
 
   // Guarda el payload ACUMULADO (todo lo conocido), para no borrar otros pasos.
   async function persist() {
@@ -119,9 +147,18 @@ function CheckinFlow({ token, data }: { token: string; data: GetCheckinResult })
     setPhase('form');
   }
 
+  if (phase === 'splash') {
+    return <Splash onAbordar={() => setPhase('intro')} />;
+  }
+
+  if (phase === 'intro') {
+    return <IntroTimeline short={wasSeen.current} onDone={handleIntroDone} />;
+  }
+
   if (phase === 'welcome') {
     return (
       <Centered>
+        <MuteButton />
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -146,6 +183,7 @@ function CheckinFlow({ token, data }: { token: string; data: GetCheckinResult })
 
   return (
     <FormProvider {...methods}>
+      <MuteButton />
       <div className="mx-auto min-h-screen max-w-md p-4 sm:p-6">
         <Progress step={phase === 'review' ? LAST_STEP + 1 : step} total={LAST_STEP} />
 
