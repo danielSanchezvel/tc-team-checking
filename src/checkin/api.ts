@@ -23,6 +23,13 @@ export async function getCheckin(token: string): Promise<GetCheckinResult> {
   return data as GetCheckinResult;
 }
 
+/** Une al viajero con el código de grupo: crea su ficha y devuelve su token. */
+export async function joinTrip(code: string): Promise<{ token: string; link_path: string }> {
+  const { data, error } = await supabase.rpc('join_trip', { p_code: code });
+  if (error) throw error;
+  return data as { token: string; link_path: string };
+}
+
 /** Guarda el payload acumulado y devuelve el status recalculado por el backend. */
 export async function saveCheckin(
   token: string,

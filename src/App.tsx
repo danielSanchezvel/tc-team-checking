@@ -1,6 +1,7 @@
 import AdminApp from './admin/AdminApp';
 import CheckinApp from './checkin/CheckinApp';
-import { checkinTokenFromPath } from './lib/route';
+import JoinApp from './checkin/JoinApp';
+import { checkinTokenFromPath, joinCodeFromPath } from './lib/route';
 
 // Enrutado mínimo por pathname (sin router externo; §6 no lo incluye).
 // /admin      -> panel admin
@@ -11,6 +12,11 @@ export default function App() {
 
   if (path.startsWith('/admin')) {
     return <AdminApp />;
+  }
+
+  const joinCode = joinCodeFromPath();
+  if (joinCode) {
+    return <JoinApp code={joinCode} />;
   }
 
   const token = checkinTokenFromPath();

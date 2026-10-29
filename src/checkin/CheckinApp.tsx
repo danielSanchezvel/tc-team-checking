@@ -168,7 +168,7 @@ function CheckinFlow({ token, data }: { token: string; data: GetCheckinResult })
           transition={{ type: 'spring', stiffness: 260, damping: 22 }}
         >
           <p className="font-display text-4xl tracking-wide text-text">
-            {data.alias}, tu vuelo abrió check-in
+            {data.alias ? `${data.alias}, tu vuelo abrió check-in` : 'Tu vuelo abrió check-in'}
           </p>
           <p className="mt-3 text-text-muted">
             Llena tus datos tal cual salen en el pasaporte. Toma menos de 3 minutos.

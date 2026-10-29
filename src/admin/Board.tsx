@@ -21,6 +21,9 @@ export default function Board({ adminEmail }: { adminEmail: string }) {
   const [alias, setAlias] = useState('');
   const [issued, setIssued] = useState<IssuedLink | null>(null);
   const [copied, setCopied] = useState(false);
+  const [groupLink, setGroupLink] = useState<string | null>(null);
+  const [groupCopied, setGroupCopied] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -64,6 +67,38 @@ export default function Board({ adminEmail }: { adminEmail: string }) {
     void load();
   }
 
+  async function generateGroupLink() {
+    setError(null);
+    const { data, error } = await supabase.rpc('regenerate_join_code');
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    setGroupLink(fullLink((data as { join_path: string }).join_path));
+    setGroupCopied(false);
+  }
+
+  async function copyGroup() {
+    if (!groupLink) return;
+    try {
+      await navigator.clipboard.writeText(groupLink);
+      setGroupCopied(true);
+    } catch {
+      setGroupCopied(false);
+    }
+  }
+
+  async function removeTraveler(id: string) {
+    setError(null);
+    const { error } = await supabase.rpc('delete_traveler', { p_id: id });
+    setConfirmDelete(null);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    void load();
+  }
+
   async function regenerate(id: string) {
     setError(null);
     const { data, error } = await supabase.rpc('regenerate_token', { p_traveler_id: id });
@@ -100,10 +135,41 @@ export default function Board({ adminEmail }: { adminEmail: string }) {
         </button>
       </header>
 
-      {/* Crear viajero */}
-      <form onSubmit={createTraveler} className="mt-6 flex gap-2">
+      {/* Link de grupo (principal) */}
+      <div className="mt-6 rounded-lg border border-violet-300/30 bg-purple-900/60 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display tracking-wide text-text">Link de grupo</h2>
+            <p className="text-xs text-text-muted">
+              Pégalo en el grupo. Cada quien llena su propia ficha.
+            </p>
+          </div>
+          <button
+            onClick={generateGroupLink}
+            className="shrink-0 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-semibold text-text"
+          >
+            {groupLink ? 'Regenerar' : 'Generar link'}
+          </button>
+        </div>
+        {groupLink && (
+          <div className="mt-3 flex items-center gap-2">
+            <code className="flex-1 overflow-x-auto rounded bg-bg-night px-3 py-2 font-mono text-xs text-text">
+              {groupLink}
+            </code>
+            <button
+              onClick={copyGroup}
+              className="shrink-0 rounded-lg bg-pink-500 px-3 py-2 text-sm font-semibold text-text"
+            >
+              {groupCopied ? 'Copiado ✓' : 'Copiar'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Crear viajero individual (respaldo) */}
+      <form onSubmit={createTraveler} className="mt-4 flex gap-2">
         <input
-          placeholder="Alias del viajero (ej. Juanchis)"
+          placeholder="Link individual (respaldo): alias"
           value={alias}
           onChange={(e) => setAlias(e.target.value)}
           required
@@ -111,9 +177,9 @@ export default function Board({ adminEmail }: { adminEmail: string }) {
         />
         <button
           type="submit"
-          className="rounded-lg bg-purple-600 px-4 py-2.5 font-semibold text-text"
+          className="rounded-lg border border-violet-300/40 px-4 py-2.5 font-semibold text-text"
         >
-          Crear link
+          Crear
         </button>
       </form>
 
@@ -197,12 +263,38 @@ export default function Board({ adminEmail }: { adminEmail: string }) {
                       {t.checkin ? new Date(t.checkin.updated_at).toLocaleString('es-CO') : '—'}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => regenerate(t.id)}
-                        className="text-xs text-violet-300 underline"
-                      >
-                        Regenerar link
-                      </button>
+                      {confirmDelete === t.id ? (
+                        <span className="text-xs">
+                          <span className="text-text-muted">¿Borrar?</span>{' '}
+                          <button
+                            onClick={() => removeTraveler(t.id)}
+                            className="text-red-400 underline"
+                          >
+                            Sí
+                          </button>{' '}
+                          <button
+                            onClick={() => setConfirmDelete(null)}
+                            className="text-violet-300 underline"
+                          >
+                            No
+                          </button>
+                        </span>
+                      ) : (
+                        <span className="flex justify-end gap-3">
+                          <button
+                            onClick={() => regenerate(t.id)}
+                            className="text-xs text-violet-300 underline"
+                          >
+                            Regenerar
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelete(t.id)}
+                            className="text-xs text-red-400 underline"
+                          >
+                            Borrar
+                          </button>
+                        </span>
+                      )}
                     </td>
                   </tr>
                 );
