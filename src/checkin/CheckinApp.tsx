@@ -99,9 +99,10 @@ function CheckinFlow({ token, data }: { token: string; data: GetCheckinResult })
     mode: 'onTouched',
   });
 
-  // Visitas siguientes: intro corta (§3). Se decide al montar.
+  // El splash sale SIEMPRE (es el toque que desbloquea el audio, así suena en
+  // cada visita). En visitas siguientes la intro es corta (§3) vía wasSeen.
   const wasSeen = useRef(readIntroSeen());
-  const [phase, setPhase] = useState<Phase>(wasSeen.current ? 'intro' : 'splash');
+  const [phase, setPhase] = useState<Phase>('splash');
   const [step, setStep] = useState(1);
   const [status, setStatus] = useState<CheckinStatus>(data.checkin?.status ?? 'faltan_datos');
   const [saving, setSaving] = useState(false);
