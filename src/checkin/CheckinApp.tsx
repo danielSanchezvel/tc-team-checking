@@ -125,7 +125,12 @@ function CheckinFlow({ token, data }: { token: string; data: GetCheckinResult })
       setStatus(res.status);
       return true;
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : 'No se pudo guardar');
+      // Los errores de Supabase (PostgrestError) no son Error de JS; saca el message igual.
+      const msg =
+        e && typeof e === 'object' && 'message' in e
+          ? String((e as { message: unknown }).message)
+          : 'No se pudo guardar';
+      setSaveError(msg);
       return false;
     } finally {
       setSaving(false);
