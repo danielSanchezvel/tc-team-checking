@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Checkin, IssuedLink, TravelerRow } from './types';
 import { exportCSV, exportXLSX } from './export';
+import { isMinor } from '../checkin/schema';
 
 const STATUS_LABEL: Record<string, { text: string; className: string }> = {
   faltan_datos: { text: 'Faltan datos', className: 'bg-purple-900 text-text-muted' },
@@ -179,7 +180,14 @@ export default function Board({ adminEmail }: { adminEmail: string }) {
                 const st = STATUS_LABEL[t.checkin?.status ?? 'faltan_datos'];
                 return (
                   <tr key={t.id} className="border-t border-violet-300/10">
-                    <td className="px-4 py-3 font-mono text-text">{t.alias}</td>
+                    <td className="px-4 py-3 font-mono text-text">
+                      {t.alias}
+                      {isMinor(t.checkin?.birth_date) && (
+                        <span className="ml-2 rounded-full bg-sun-300/20 px-2 py-0.5 text-xs text-sun-300">
+                          menor
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2.5 py-1 text-xs ${st.className}`}>
                         {st.text}
