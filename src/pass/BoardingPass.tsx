@@ -16,7 +16,7 @@ function Stamp({ status }: { status: PassFields['status'] }) {
       initial={{ rotate: -30, scale: 2.4, opacity: 0 }}
       animate={{ rotate: -14, scale: 1, opacity: 0.92 }}
       transition={{ type: 'spring', stiffness: 220, damping: 12, delay: 0.25 }}
-      className="pointer-events-none absolute right-5 top-16 font-display text-2xl tracking-widest"
+      className="pointer-events-none absolute right-6 top-[46%] font-display text-2xl tracking-widest"
       style={{
         color: s.color,
         border: `3px solid ${s.color}`,
