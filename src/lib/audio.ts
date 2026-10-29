@@ -30,6 +30,7 @@ function writeMute(v: boolean): void {
 class IntroAudio {
   private el: HTMLAudioElement | null = null;
   private raf = 0;
+  private fadeSafety = 0;
 
   private ensure(): HTMLAudioElement {
     if (!this.el) {
@@ -37,6 +38,16 @@ class IntroAudio {
       el.preload = 'auto';
       el.loop = false;
       el.muted = readMute();
+      el.setAttribute('playsinline', '');
+      el.setAttribute('data-tc-audio', '');
+      // Adjuntarlo al DOM mejora la fiabilidad en webviews (p. ej. el navegador
+      // interno de WhatsApp, §9). Oculto y fuera de flujo.
+      el.style.display = 'none';
+      try {
+        document.body.appendChild(el);
+      } catch {
+        /* SSR/entorno sin document: no pasa nada */
+      }
       this.el = el;
     }
     return this.el;
@@ -62,16 +73,30 @@ class IntroAudio {
   }
 
   /** Arranca desde 0 con fade-in. Debe llamarse dentro del gesto del usuario. */
-  async playFromStart(fadeMs = FADE_IN_MS): Promise<void> {
+  async playFromStart(fadeMs = FADE_IN_MS): Promise<boolean> {
     const el = this.ensure();
-    el.currentTime = 0;
-    el.volume = el.muted ? 1 : 0; // el volumen sube con el fade; muted manda igual
+    el.muted = readMute();
+    try {
+      el.currentTime = 0; // si aún no es seekable, se ignora
+    } catch {
+      /* noop */
+    }
+    el.volume = 0; // sube con el fade (seguro); si falla el rAF, el timeout lo fuerza
+    // NO llamar a pause() antes de play(): provoca AbortError y el audio no suena.
     try {
       await el.play();
+      this.fadeTo(1, fadeMs);
+      return true;
     } catch {
-      return; // autoplay bloqueado o sin audio: la intro corre sin música
+      el.volume = 1; // por si suena luego (p. ej. al reanudar)
+      return false;
     }
-    this.fadeTo(1, fadeMs);
+  }
+
+  /** Reanuda o arranca el audio (dentro de un gesto, p. ej. el botón de sonido). */
+  resume(): void {
+    const el = this.ensure();
+    if (el.paused) el.play().catch(() => {});
   }
 
   /** Tiempo actual en ms (para anclar el timeline, §3.2). */
@@ -87,10 +112,11 @@ class IntroAudio {
     this.ensure().loop = v;
   }
 
-  /** Rampa de volumen (no se usa mientras muted). */
+  /** Rampa de volumen con red de seguridad (nunca queda a medias en 0). */
   fadeTo(target: number, ms: number): void {
     const el = this.ensure();
     cancelAnimationFrame(this.raf);
+    window.clearTimeout(this.fadeSafety);
     if (el.muted || ms <= 0) {
       el.volume = target;
       return;
@@ -103,6 +129,14 @@ class IntroAudio {
       if (p < 1) this.raf = requestAnimationFrame(tick);
     };
     this.raf = requestAnimationFrame(tick);
+    // Si el rAF se congela (tab en segundo plano, etc.), forzamos el volumen final.
+    this.fadeSafety = window.setTimeout(() => {
+      try {
+        el.volume = target;
+      } catch {
+        /* noop */
+      }
+    }, ms + 150);
   }
 
   /** Baja a volumen de formulario y pone en loop (§5). */

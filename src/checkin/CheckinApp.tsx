@@ -171,7 +171,10 @@ function CheckinFlow({ token, data }: { token: string; data: GetCheckinResult })
             Llena tus datos tal cual salen en el pasaporte. Toma menos de 3 minutos.
           </p>
           <button
-            onClick={() => setPhase('form')}
+            onClick={() => {
+              introAudio.resume(); // arranca la música si no venía sonando (visitas siguientes)
+              setPhase('form');
+            }}
             className="mt-8 rounded-xl bg-pink-500 px-8 py-3 font-semibold text-text shadow-tc-neon"
           >
             Empezar check-in
