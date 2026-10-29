@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+*.local
+*.tsbuildinfo
+
+# Env — NUNCA commitear llaves
+.env
+.env.local
+.env.*.local
+
+# Audio y assets locales — se sirven desde Supabase Storage, no van en el repo (§5, §15)
+assets-local/
+intro-tc-team.mp3
+
+# Supabase CLI state
+supabase/.temp/
+supabase/.branches/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Test
+coverage/

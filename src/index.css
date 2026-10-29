@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tokens de §4 — fuente de verdad de los colores. Modo solo oscuro. */
+:root {
+  --bg-night: #12041f;
+  --purple-900: #2a0b45;
+  --purple-600: #6a1fb5;
+  --violet-300: #b57bff;
+  --pink-500: #ff2e93;
+  --orange-400: #ff8a3d;
+  --honey-400: #ffb319; /* reservado: logo / sello / glow */
+  --honey-700: #b86e00;
+  --sun-300: #ffd166;
+  --mint-400: #2ef2c2;
+  --red-400: #ff4d6d;
+  --text: #f8f1ff;
+  --text-muted: #c9b6e4;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-night);
+  color: var(--text);
+  font-family: 'Manrope', 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
