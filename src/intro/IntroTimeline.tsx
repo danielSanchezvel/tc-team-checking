@@ -130,17 +130,27 @@ export default function IntroTimeline({
 
       tl.pause(0);
 
-      // Anclaje al audio: si suena, el audio manda el playhead (§3.2).
-      if (introAudio.isPlaying) {
-        tick = () => {
+      // Anclaje al audio (§3.2): el playhead lo manda audio.currentTime.
+      // play() tiene latencia, así que esperamos a que el audio arranque de
+      // verdad; mientras tanto mantenemos el timeline en 0. Si a los 1,2 s el
+      // audio no arrancó (bloqueado / sin música), corremos por tiempo real.
+      let fallbackToTime = false;
+      const waitStart = performance.now();
+      tick = () => {
+        if (fallbackToTime) return;
+        if (introAudio.isPlaying) {
           const t = introAudio.currentTimeMs;
           tl.time(Math.min(t / 1000, END_MS / 1000));
           if (t >= END_MS) finish();
-        };
-        gsap.ticker.add(tick);
-      } else {
-        tl.play();
-      }
+        } else if (performance.now() - waitStart > 1200) {
+          fallbackToTime = true;
+          if (tick) gsap.ticker.remove(tick);
+          tl.play(); // sin música: corre por tiempo
+        } else {
+          tl.time(0); // esperando a que el audio arranque
+        }
+      };
+      gsap.ticker.add(tick);
     }, root);
 
     return () => {
