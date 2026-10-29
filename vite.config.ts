@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => {
       environment: 'node',
       globals: true,
       env,
+      // Las pruebas pegan a Supabase en la nube (East US); damos margen a la latencia.
+      testTimeout: 20000,
     },
   };
 });
