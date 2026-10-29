@@ -12,6 +12,8 @@ import Splash from '../intro/Splash';
 import IntroTimeline from '../intro/IntroTimeline';
 import MuteButton from '../intro/MuteButton';
 import { introAudio } from '../lib/audio';
+import BoardingPass from '../pass/BoardingPass';
+import { buildPassFields } from '../pass/passData';
 
 const DEPARTURE_FALLBACK = '2027-03-31'; // peor caso (§16.6); normalmente llega del trip.
 const INTRO_SEEN_KEY = 'tc_intro_seen';
@@ -49,7 +51,7 @@ function toDefaults(c: Checkin | null): CheckinForm {
   };
 }
 
-type Phase = 'splash' | 'intro' | 'welcome' | 'form' | 'review';
+type Phase = 'splash' | 'intro' | 'welcome' | 'form' | 'review' | 'pass';
 const LAST_STEP = 4;
 
 export default function CheckinApp({ token }: { token: string }) {
@@ -185,6 +187,18 @@ function CheckinFlow({ token, data }: { token: string; data: GetCheckinResult })
     );
   }
 
+  if (phase === 'pass') {
+    return (
+      <>
+        <MuteButton />
+        <BoardingPass
+          fields={buildPassFields(data.alias, status, departure)}
+          onBack={() => setPhase('review')}
+        />
+      </>
+    );
+  }
+
   return (
     <FormProvider {...methods}>
       <MuteButton />
@@ -231,6 +245,7 @@ function CheckinFlow({ token, data }: { token: string; data: GetCheckinResult })
             status={status}
             onEdit={editSection}
             onConfirm={persist}
+            onShowPass={() => setPhase('pass')}
             saving={saving}
             saveError={saveError}
           />

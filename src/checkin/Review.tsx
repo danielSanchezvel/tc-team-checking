@@ -46,12 +46,14 @@ export default function Review({
   status,
   onEdit,
   onConfirm,
+  onShowPass,
   saving,
   saveError,
 }: {
   status: CheckinStatus;
   onEdit: (n: number) => void;
   onConfirm: () => Promise<boolean>;
+  onShowPass: () => void;
   saving: boolean;
   saveError: string | null;
 }) {
@@ -119,8 +121,14 @@ export default function Review({
               : status === 'pasaporte_pendiente'
                 ? 'Quedas en Pasaporte pendiente hasta tener pasaporte vigente. '
                 : 'Aún faltan datos para quedar Completo. '}
-            Tu pasabordo animado llega pronto.
+            Ya puedes ver tu pasabordo.
           </p>
+          <button
+            onClick={onShowPass}
+            className="mt-4 w-full rounded-xl bg-pink-500 px-5 py-3 font-semibold text-text shadow-tc-neon"
+          >
+            Ver mi pasabordo ✈
+          </button>
         </div>
       ) : (
         <button
